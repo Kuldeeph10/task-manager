@@ -1,0 +1,876 @@
+# Office Task Manager - API Testing Guide
+
+## Base URL
+```
+http://localhost:5000
+```
+
+---
+
+## 1. AUTHENTICATION ENDPOINTS
+
+### 1.1 Health Check
+**Endpoint:** `GET /`  
+**Access:** Public  
+**Description:** Check if API is running
+
+**Request:**
+```http
+GET http://localhost:5000/
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Office Task Manager API is running"
+}
+```
+
+---
+
+### 1.2 Register User
+**Endpoint:** `POST /api/auth/register`  
+**Access:** Public  
+**Description:** Register new user (needs admin approval)
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**Request Body - Admin:**
+```json
+{
+  "name": "Admin User",
+  "email": "admin@company.com",
+  "password": "admin123",
+  "role": "admin",
+  "phone": "1234567890",
+  "department": "Administration",
+  "designation": "System Administrator"
+}
+```
+
+**Request Body - Manager:**
+```json
+{
+  "name": "Manager User",
+  "email": "manager@company.com",
+  "password": "manager123",
+  "role": "manager",
+  "phone": "9876543210",
+  "department": "Operations",
+  "designation": "Operations Manager"
+}
+```
+
+**Request Body - Employee:**
+```json
+{
+  "name": "Employee User",
+  "email": "employee@company.com",
+  "password": "employee123",
+  "role": "employee",
+  "phone": "5555555555",
+  "department": "Development",
+  "designation": "Software Developer"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Registration successful! Please wait for admin approval.",
+  "data": {
+    "_id": "6543abc123def456...",
+    "name": "Employee User",
+    "email": "employee@company.com",
+    "role": "employee",
+    "isApproved": false
+  }
+}
+```
+
+---
+
+### 1.3 Login User
+**Endpoint:** `POST /api/auth/login`  
+**Access:** Public  
+**Description:** Login with email and password
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "email": "admin@company.com",
+  "password": "admin123"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "_id": "6543abc123def456...",
+    "name": "Admin User",
+    "email": "admin@company.com",
+    "role": "admin",
+    "isApproved": true
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1NDNhYmMxMjNkZWY0NTYiLCJpYXQiOjE2OTg3NTQ1NDUsImV4cCI6MTY5OTM1OTM0NX0.xyz..."
+}
+```
+
+**⚠️ Important:** Save the token! Use it in Authorization header for protected routes.
+
+---
+
+### 1.4 Get Current User Profile
+**Endpoint:** `GET /api/auth/me`  
+**Access:** Private (Authenticated users)  
+**Description:** Get logged in user's profile
+
+**Headers:**
+```
+Authorization: Bearer YOUR_TOKEN_HERE
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "6543abc123def456...",
+    "name": "Admin User",
+    "email": "admin@company.com",
+    "role": "admin",
+    "isApproved": true,
+    "phone": "1234567890",
+    "department": "Administration",
+    "designation": "System Administrator",
+    "createdAt": "2025-10-30T10:30:00.000Z",
+    "updatedAt": "2025-10-30T10:30:00.000Z"
+  }
+}
+```
+
+---
+
+## 2. USER MANAGEMENT ENDPOINTS (ADMIN ONLY)
+
+### 2.1 Get All Users
+**Endpoint:** `GET /api/users`  
+**Access:** Private (Admin only)  
+**Description:** Get list of all registered users
+
+**Headers:**
+```
+Authorization: Bearer ADMIN_TOKEN
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "count": 3,
+  "data": [
+    {
+      "_id": "...",
+      "name": "Admin User",
+      "email": "admin@company.com",
+      "role": "admin",
+      "isApproved": true,
+      ...
+    },
+    {
+      "_id": "...",
+      "name": "Manager User",
+      "email": "manager@company.com",
+      "role": "manager",
+      "isApproved": true,
+      ...
+    }
+  ]
+}
+```
+
+---
+
+### 2.2 Get Pending User Approvals
+**Endpoint:** `GET /api/users/pending`  
+**Access:** Private (Admin only)  
+**Description:** Get users waiting for approval
+
+**Headers:**
+```
+Authorization: Bearer ADMIN_TOKEN
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "count": 1,
+  "data": [
+    {
+      "_id": "...",
+      "name": "Employee User",
+      "email": "employee@company.com",
+      "role": "employee",
+      "isApproved": false,
+      "department": "Development",
+      "designation": "Software Developer"
+    }
+  ]
+}
+```
+
+---
+
+### 2.3 Approve User
+**Endpoint:** `PUT /api/users/:id/approve`  
+**Access:** Private (Admin only)  
+**Description:** Approve a pending user
+
+**Headers:**
+```
+Authorization: Bearer ADMIN_TOKEN
+```
+
+**Example:**
+```http
+PUT http://localhost:5000/api/users/6543abc123def456/approve
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User approved successfully",
+  "data": {
+    "_id": "6543abc123def456",
+    "name": "Employee User",
+    "email": "employee@company.com",
+    "role": "employee",
+    "isApproved": true
+  }
+}
+```
+
+---
+
+### 2.4 Delete User
+**Endpoint:** `DELETE /api/users/:id`  
+**Access:** Private (Admin only)  
+**Description:** Delete/reject a user
+
+**Headers:**
+```
+Authorization: Bearer ADMIN_TOKEN
+```
+
+**Example:**
+```http
+DELETE http://localhost:5000/api/users/6543abc123def456
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User deleted successfully"
+}
+```
+
+---
+
+### 2.5 Update User Role
+**Endpoint:** `PUT /api/users/:id/role`  
+**Access:** Private (Admin only)  
+**Description:** Change user's role
+
+**Headers:**
+```
+Authorization: Bearer ADMIN_TOKEN
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "role": "manager"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User role updated successfully",
+  "data": {
+    "_id": "...",
+    "name": "Employee User",
+    "email": "employee@company.com",
+    "role": "manager",
+    "isApproved": true
+  }
+}
+```
+
+---
+
+### 2.6 Get All Employees
+**Endpoint:** `GET /api/users/employees`  
+**Access:** Private (Manager/Admin)  
+**Description:** Get list of approved employees for task assignment
+
+**Headers:**
+```
+Authorization: Bearer MANAGER_TOKEN
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "count": 2,
+  "data": [
+    {
+      "_id": "...",
+      "name": "Employee One",
+      "email": "employee1@company.com",
+      "role": "employee",
+      "department": "Development"
+    },
+    {
+      "_id": "...",
+      "name": "Employee Two",
+      "email": "employee2@company.com",
+      "role": "employee",
+      "department": "Design"
+    }
+  ]
+}
+```
+
+---
+
+## 3. TASK MANAGEMENT ENDPOINTS
+
+### 3.1 Create Task
+**Endpoint:** `POST /api/tasks`  
+**Access:** Private (Manager/Admin only)  
+**Description:** Create and assign new task to employee
+
+**Headers:**
+```
+Authorization: Bearer MANAGER_TOKEN
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "title": "Complete Project Documentation",
+  "description": "Write comprehensive documentation for the new feature including API docs, user guide, and deployment instructions",
+  "assignedTo": "EMPLOYEE_ID_HERE",
+  "priority": "high",
+  "dueDate": "2025-11-15"
+}
+```
+
+**Priority Options:** `low`, `medium`, `high`, `urgent`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Task created successfully",
+  "data": {
+    "_id": "...",
+    "title": "Complete Project Documentation",
+    "description": "Write comprehensive documentation...",
+    "assignedTo": {
+      "_id": "...",
+      "name": "Employee User",
+      "email": "employee@company.com"
+    },
+    "assignedBy": {
+      "_id": "...",
+      "name": "Manager User",
+      "email": "manager@company.com"
+    },
+    "status": "pending",
+    "priority": "high",
+    "dueDate": "2025-11-15T00:00:00.000Z",
+    "comments": [],
+    "createdAt": "2025-10-30T10:45:00.000Z",
+    "updatedAt": "2025-10-30T10:45:00.000Z"
+  }
+}
+```
+
+---
+
+### 3.2 Get All Tasks
+**Endpoint:** `GET /api/tasks/all`  
+**Access:** Private (Manager/Admin only)  
+**Description:** Get all tasks in the system
+
+**Headers:**
+```
+Authorization: Bearer MANAGER_TOKEN
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "count": 5,
+  "data": [
+    {
+      "_id": "...",
+      "title": "Complete Project Documentation",
+      "description": "Write comprehensive documentation...",
+      "assignedTo": {
+        "_id": "...",
+        "name": "Employee User",
+        "email": "employee@company.com",
+        "department": "Development"
+      },
+      "assignedBy": {
+        "_id": "...",
+        "name": "Manager User",
+        "email": "manager@company.com"
+      },
+      "status": "in-progress",
+      "priority": "high",
+      "dueDate": "2025-11-15T00:00:00.000Z",
+      "createdAt": "2025-10-30T10:45:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### 3.3 Get My Tasks
+**Endpoint:** `GET /api/tasks/my-tasks`  
+**Access:** Private (Employee)  
+**Description:** Get tasks assigned to logged-in employee
+
+**Headers:**
+```
+Authorization: Bearer EMPLOYEE_TOKEN
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "count": 3,
+  "data": [
+    {
+      "_id": "...",
+      "title": "Complete Project Documentation",
+      "description": "Write comprehensive documentation...",
+      "assignedBy": {
+        "_id": "...",
+        "name": "Manager User",
+        "email": "manager@company.com"
+      },
+      "status": "pending",
+      "priority": "high",
+      "dueDate": "2025-11-15T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### 3.4 Get Task By ID
+**Endpoint:** `GET /api/tasks/:id`  
+**Access:** Private (All authenticated)  
+**Description:** Get detailed task information
+
+**Headers:**
+```
+Authorization: Bearer YOUR_TOKEN
+```
+
+**Example:**
+```http
+GET http://localhost:5000/api/tasks/6543abc123def456
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "...",
+    "title": "Complete Project Documentation",
+    "description": "Write comprehensive documentation...",
+    "assignedTo": {
+      "_id": "...",
+      "name": "Employee User",
+      "email": "employee@company.com",
+      "department": "Development",
+      "designation": "Software Developer"
+    },
+    "assignedBy": {
+      "_id": "...",
+      "name": "Manager User",
+      "email": "manager@company.com"
+    },
+    "status": "in-progress",
+    "priority": "high",
+    "dueDate": "2025-11-15T00:00:00.000Z",
+    "comments": [
+      {
+        "_id": "...",
+        "user": {
+          "_id": "...",
+          "name": "Employee User"
+        },
+        "text": "Started working on this task",
+        "createdAt": "2025-10-30T11:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 3.5 Update Task
+**Endpoint:** `PUT /api/tasks/:id`  
+**Access:** Private (Manager/Admin only)  
+**Description:** Update any task field
+
+**Headers:**
+```
+Authorization: Bearer MANAGER_TOKEN
+Content-Type: application/json
+```
+
+**Request Body (Update any fields):**
+```json
+{
+  "title": "Updated Task Title",
+  "description": "Updated description",
+  "priority": "urgent",
+  "dueDate": "2025-11-20",
+  "status": "on-hold"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Task updated successfully",
+  "data": {
+    "_id": "...",
+    "title": "Updated Task Title",
+    "description": "Updated description",
+    "priority": "urgent",
+    "status": "on-hold",
+    "dueDate": "2025-11-20T00:00:00.000Z"
+  }
+}
+```
+
+---
+
+### 3.6 Update Task Status
+**Endpoint:** `PUT /api/tasks/:id/status`  
+**Access:** Private (Employee - own tasks only)  
+**Description:** Employee updates their task status
+
+**Headers:**
+```
+Authorization: Bearer EMPLOYEE_TOKEN
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "status": "in-progress"
+}
+```
+
+**Status Options:** `pending`, `in-progress`, `completed`, `on-hold`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Task status updated successfully",
+  "data": {
+    "_id": "...",
+    "title": "Complete Project Documentation",
+    "status": "in-progress",
+    "assignedTo": {...},
+    "assignedBy": {...}
+  }
+}
+```
+
+---
+
+### 3.7 Delete Task
+**Endpoint:** `DELETE /api/tasks/:id`  
+**Access:** Private (Manager/Admin only)  
+**Description:** Delete a task
+
+**Headers:**
+```
+Authorization: Bearer MANAGER_TOKEN
+```
+
+**Example:**
+```http
+DELETE http://localhost:5000/api/tasks/6543abc123def456
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Task deleted successfully"
+}
+```
+
+---
+
+### 3.8 Add Comment to Task
+**Endpoint:** `POST /api/tasks/:id/comments`  
+**Access:** Private (All authenticated)  
+**Description:** Add comment/note to a task
+
+**Headers:**
+```
+Authorization: Bearer YOUR_TOKEN
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "text": "I've started working on this task. Will complete by tomorrow."
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Comment added successfully",
+  "data": {
+    "_id": "...",
+    "title": "Complete Project Documentation",
+    "comments": [
+      {
+        "_id": "...",
+        "user": {
+          "_id": "...",
+          "name": "Employee User"
+        },
+        "text": "I've started working on this task. Will complete by tomorrow.",
+        "createdAt": "2025-10-30T11:30:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 3.9 Get Task Statistics
+**Endpoint:** `GET /api/tasks/stats`  
+**Access:** Private (Manager/Admin only)  
+**Description:** Get task statistics for dashboard
+
+**Headers:**
+```
+Authorization: Bearer MANAGER_TOKEN
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "total": 10,
+    "pending": 3,
+    "inProgress": 4,
+    "completed": 2,
+    "onHold": 1
+  }
+}
+```
+
+---
+
+## 4. COMMON ERROR RESPONSES
+
+### 4.1 Validation Error
+**Status Code:** 400
+```json
+{
+  "success": false,
+  "errors": [
+    {
+      "msg": "Please provide a valid email",
+      "param": "email",
+      "location": "body"
+    }
+  ]
+}
+```
+
+### 4.2 Unauthorized (No Token)
+**Status Code:** 401
+```json
+{
+  "success": false,
+  "message": "Not authorized to access this route"
+}
+```
+
+### 4.3 Forbidden (Not Approved)
+**Status Code:** 403
+```json
+{
+  "success": false,
+  "message": "Your account is pending approval from admin"
+}
+```
+
+### 4.4 Forbidden (Wrong Role)
+**Status Code:** 403
+```json
+{
+  "success": false,
+  "message": "User role 'employee' is not authorized to access this route"
+}
+```
+
+### 4.5 Not Found
+**Status Code:** 404
+```json
+{
+  "success": false,
+  "message": "Resource not found"
+}
+```
+
+### 4.6 Duplicate Email
+**Status Code:** 400
+```json
+{
+  "success": false,
+  "message": "User already exists with this email"
+}
+```
+
+---
+
+## 5. TESTING WORKFLOW
+
+### Complete Testing Sequence:
+
+1. **Register Admin** → POST /api/auth/register (role: admin)
+2. **Manually Approve Admin** in MongoDB (set isApproved: true)
+3. **Login Admin** → POST /api/auth/login (get admin token)
+4. **Register Manager** → POST /api/auth/register (role: manager)
+5. **Approve Manager** → PUT /api/users/:id/approve (admin token)
+6. **Login Manager** → POST /api/auth/login (get manager token)
+7. **Register Employee** → POST /api/auth/register (role: employee)
+8. **Approve Employee** → PUT /api/users/:id/approve (admin token)
+9. **Login Employee** → POST /api/auth/login (get employee token)
+10. **Get Employees List** → GET /api/users/employees (manager token)
+11. **Create Task** → POST /api/tasks (manager token, assign to employee)
+12. **Employee Views Tasks** → GET /api/tasks/my-tasks (employee token)
+13. **Employee Updates Status** → PUT /api/tasks/:id/status (employee token)
+14. **Add Comment** → POST /api/tasks/:id/comments (any token)
+15. **Get Task Stats** → GET /api/tasks/stats (manager token)
+
+---
+
+## 6. MONGODB MANUAL APPROVAL
+
+For the first admin user, manually approve in MongoDB:
+
+### Using MongoDB Compass:
+1. Open MongoDB Compass
+2. Connect to `mongodb://localhost:27017`
+3. Navigate to `office-task-manager` → `users`
+4. Find admin user
+5. Edit document: Set `isApproved: true`
+6. Save changes
+
+### Using MongoDB Shell:
+```bash
+mongosh
+use office-task-manager
+db.users.updateOne(
+  { email: "admin@company.com" },
+  { $set: { isApproved: true } }
+)
+```
+
+---
+
+## 7. TIPS FOR TESTING
+
+1. **Save Tokens**: Keep admin, manager, and employee tokens handy
+2. **Use Variables**: In Postman/Thunder Client, use environment variables for tokens
+3. **Test Order**: Follow the testing sequence above
+4. **Check Roles**: Test role-based access (employee shouldn't access admin routes)
+5. **Validation**: Try invalid data to test validation
+6. **Error Cases**: Test expired tokens, wrong credentials, etc.
+
+---
+
+## 8. POSTMAN COLLECTION STRUCTURE
+
+```
+Office Task Manager API
+├── Authentication
+│   ├── Register User
+│   ├── Login User
+│   └── Get Current User
+├── User Management (Admin)
+│   ├── Get All Users
+│   ├── Get Pending Users
+│   ├── Approve User
+│   ├── Delete User
+│   ├── Update User Role
+│   └── Get Employees
+└── Task Management
+    ├── Create Task
+    ├── Get All Tasks
+    ├── Get My Tasks
+    ├── Get Task By ID
+    ├── Update Task
+    ├── Update Task Status
+    ├── Delete Task
+    ├── Add Comment
+    └── Get Task Statistics
+```
+
+---
+
+**Happy Testing! 🚀**
