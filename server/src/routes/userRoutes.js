@@ -7,9 +7,13 @@ const {
   deleteUser,
   getEmployees,
   updateUserRole,
+  updateProfile,
 } = require('../controllers/userController');
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
+
+// Update own profile (all authenticated users) - MUST BE BEFORE /:id routes
+router.put('/profile', protect, updateProfile);
 
 // Admin only routes
 router.get('/', protect, authorize('admin'), getAllUsers);
